@@ -1,0 +1,260 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== ENUMS ====================
+
+enum ContentType {
+  ARTICLE
+  FACT
+  BOOK_REVIEW
+  MOVIE_REVIEW
+  HOBBY
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum FinanceType {
+  INCOME
+  EXPENSE
+}
+
+enum MoodType {
+  GREAT
+  GOOD
+  OKAY
+  TIRED
+  STRESSED
+}
+
+enum FocusType {
+  WORK
+  BREAK
+}
+
+// ==================== MODELS ====================
+
+model User {
+  id         BigInt   @id // Telegram User ID
+  username   String?
+  first_name String
+  last_name  String?
+  photo_url  String?
+  currency   String   @default("UZS")
+  step_goal  Int      @default(10000)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  content_entries ContentEntry[]
+  tasks           Task[]
+  finances        Finance[]
+  health_logs     HealthLog[]
+  reminders       Reminder[]
+  habits          Habit[]
+  habit_logs      HabitLog[]
+  goals           Goal[]
+  focus_sessions  FocusSession[]
+  mood_logs       MoodLog[]
+
+  @@map("users")
+}
+
+model ContentEntry {
+  id          String      @id @default(cuid())
+  user_id     BigInt
+  title       String
+  content     String      @db.Text
+  cover_image String?
+  type        ContentType
+  rating      Int?        // 1-10, faqat BOOK_REVIEW va MOVIE_REVIEW uchun
+  tags        String[]    @default([])
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([type])
+  @@map("content_entries")
+}
+
+model Task {
+  id           String    @id @default(cuid())
+  user_id      BigInt
+  title        String
+  description  String?   @db.Text
+  due_date     DateTime?
+  is_completed Boolean   @default(false)
+  priority     Priority  @default(MEDIUM)
+  created_at   DateTime  @default(now())
+  updated_at   DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([is_completed])
+  @@map("tasks")
+}
+
+model Finance {
+  id            String      @id @default(cuid())
+  user_id       BigInt
+  amount        Decimal     @db.Decimal(15, 2)
+  type          FinanceType
+  category      String
+  receipt_image String?
+  note          String?
+  date          DateTime    @default(now())
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([date])
+  @@index([type])
+  @@map("finances")
+}
+
+model HealthLog {
+  id               String   @id @default(cuid())
+  user_id          BigInt
+  date             DateTime @db.Date
+  steps_count      Int      @default(0)
+  calories_burned  Int?
+  water_intake_ml  Int      @default(0)
+  notes            String?
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@index([user_id])
+  @@map("health_logs")
+}
+
+model Reminder {
+  id          String   @id @default(cuid())
+  user_id     BigInt
+  title       String
+  description String?
+  remind_at   DateTime
+  is_notified Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([remind_at])
+  @@map("reminders")
+}
+
+model Habit {
+  id             String     @id @default(cuid())
+  user_id        BigInt
+  title          String
+  icon           String     @default("⭐")
+  category       String     @default("Umumiy")
+  target_days    Int        @default(7) // haftasiga necha kun
+  current_streak Int        @default(0)
+  best_streak    Int        @default(0)
+  last_completed DateTime?  @db.Date
+  created_at     DateTime   @default(now())
+  updated_at     DateTime   @updatedAt
+
+  // Relations
+  user User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@index([user_id])
+  @@map("habits")
+}
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habit_id  String
+  user_id   BigInt
+  date      DateTime @db.Date
+  completed Boolean  @default(true)
+
+  // Relations
+  habit Habit @relation(fields: [habit_id], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([habit_id, date])
+  @@index([user_id, date])
+  @@map("habit_logs")
+}
+
+model Goal {
+  id             String    @id @default(cuid())
+  user_id        BigInt
+  title          String
+  target_amount  Decimal   @db.Decimal(15, 2)
+  current_amount Decimal   @default(0) @db.Decimal(15, 2)
+  category       String    @default("Jamg'arma")
+  icon           String    @default("🎯")
+  deadline       DateTime?
+  is_completed   Boolean   @default(false)
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@map("goals")
+}
+
+model FocusSession {
+  id               String    @id @default(cuid())
+  user_id          BigInt
+  duration_minutes Int       @default(25)
+  type             FocusType @default(WORK)
+  note             String?
+  completed_at     DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([completed_at])
+  @@map("focus_sessions")
+}
+
+model MoodLog {
+  id           String   @id @default(cuid())
+  user_id      BigInt
+  date         DateTime @db.Date
+  mood         MoodType @default(GOOD)
+  energy_level Int      @default(3) // 1-5
+  note         String?  @db.Text
+  created_at   DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, date])
+  @@index([user_id])
+  @@map("mood_logs")
+}
