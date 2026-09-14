@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { supabaseAdmin, STORAGE_BUCKETS } from '@/lib/supabase';
 import { validateTelegramInitData } from '@/lib/telegram/validate';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
 
     // Fayl nomi yaratish
     const extension = file.name.split('.').pop() || 'jpg';
-    const fileName = `${uuidv4()}.${extension}`;
+    const fileName = `${randomUUID()}.${extension}`;
     const filePath = `${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, '0')}/${fileName}`;
 
     // Supabase Storage ga yuklash
