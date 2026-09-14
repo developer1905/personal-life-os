@@ -270,14 +270,14 @@ export default function FinancePage() {
         <button
           className={`tab-btn ${activeType === 'EXPENSE' ? 'active' : ''}`}
           style={{ flex: 1 }}
-          onClick={() => { tap(); setActiveType(FinanceType.EXPENSE); }}
+          onClick={() => { tap(); setActiveType('EXPENSE'); }}
         >
           📉 Chiqimlar
         </button>
         <button
           className={`tab-btn ${activeType === 'INCOME' ? 'active' : ''}`}
           style={{ flex: 1 }}
-          onClick={() => { tap(); setActiveType(FinanceType.INCOME); }}
+          onClick={() => { tap(); setActiveType('INCOME'); }}
         >
           📈 Kirimlar
         </button>
